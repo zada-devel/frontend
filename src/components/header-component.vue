@@ -2,7 +2,7 @@
   <header>
     <nav class="navbar navbar-expand-lg navbar-light bg-transparent px-4 py-2">
       <div class="container-fluid">
-        <a class="navbar-brand fs-4 fw-semibold text-dark" href="/dashboard">
+        <a class="navbar-brand fs-4 fw-semibold text-dark" href="/">
           <img src="../assets/icons/logo.png" alt="Logo" class="d-inline-block align-text-top" style="height: 50px;" />
         </a>
 
