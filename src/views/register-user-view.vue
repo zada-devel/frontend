@@ -74,40 +74,38 @@
     </LandingAuthComponent>
   </template>
   
-  <script lang="ts">
-  import { defineComponent, reactive } from 'vue';
-import LandingAuthComponent from '../components/landing-auth-component.vue';
+  <script setup lang="ts">
+  import { reactive } from 'vue';
+  import { useAuthentication } from '../stores/authetication-store';
+  import LandingAuthComponent from '../components/landing-auth-component.vue';
   
-  export default defineComponent({
-    components: { LandingAuthComponent  },
-    setup() {
-  
-      const form = reactive({
-        firstname: '',
-        lastname: '',
-        email: '',
-        phone: '',
-        passwd: '',
-        dob: '',
-        placeOfBirth: '',
-        gender: 'L',
-        ethnic: '',
-        religion: '',
-        lastEducation: '',
-        occupation: '',
-        maritalStatus: 'single',
-        referredFrom: '',
-        role: 'user',
-      });
-  
-      const handleRegister = () => {
-        console.log('Register data:', form);
-        // auth.register(form);
-      };
-  
-      return { form, handleRegister };
-    },
+  const authStore = useAuthentication();
+  const form = reactive({
+    firstname: '',
+    lastname: '',
+    email: '',
+    phone: '',
+    passwd: '',
+    dob: '',
+    placeOfBirth: '',
+    gender: 'L',
+    ethnic: '',
+    religion: '',
+    lastEducation: '',
+    occupation: '',
+    maritalStatus: 'single',
+    referredFrom: '',
+    role: 'user',
   });
+  
+  const handleRegister = async () => {
+    try {
+      await authStore.register(form);
+      console.log('Registration successful');
+    } catch (error) {
+      console.error('Registration failed:', error);
+    }
+  };
   </script>
   
   <style scoped>

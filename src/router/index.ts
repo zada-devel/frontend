@@ -73,7 +73,7 @@ router.beforeEach((to: RouteLocationNormalized, from: RouteLocationNormalized, n
   console.log('Navigating from:', from.name);  // Example usage of `from`
   console.log('Checking token in beforeEach:', token); // Debugging log
 
-  if (to.name !== 'login' && !token) {
+  if (to.name !== 'login' && to.name !== 'register' && !token) {
     console.log('Token not found, redirecting to login...');
     next({ name: 'login' }); // Redirect to login if no token
   } else {

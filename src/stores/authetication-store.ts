@@ -2,6 +2,24 @@ import { defineStore } from 'pinia';
 import { ref, computed } from 'vue';
 import axios from 'axios';
 
+interface UserData {
+  firstname: string;
+  lastname: string;
+  email: string;
+  phone: string;
+  passwd: string;
+  dob: string;
+  placeOfBirth: string;
+  gender: string;
+  ethnic: string;
+  religion: string;
+  lastEducation: string;
+  occupation: string;
+  maritalStatus: string;
+  referredFrom?: string;
+  role: string;
+}
+
 export const useAuthentication = defineStore('authentication', () => {
   const email = ref<string | null>(localStorage.getItem('email'));
   const token = ref<string | null>(localStorage.getItem('token'));
@@ -42,11 +60,23 @@ export const useAuthentication = defineStore('authentication', () => {
     localStorage.removeItem('email');
   };
 
+  const register = async (userData: UserData) => {
+    try {
+      const response = await axios.post('/register', userData);
+      return response.data;
+    } catch (error) {
+      console.error('Error during registration:', error);
+      throw error;
+    }
+  };
+
+
   return {
     email,
     token,
     isAuthenticated,
     isLogged,
+    register,
     login,
     logout,
   };
