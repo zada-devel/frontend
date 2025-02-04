@@ -56,7 +56,7 @@
         <input type="text" v-model="form.occupation" class="form-control" id="occupation" required />
       </div>
       <div class="mb-3">
-        <p for="maritalStatus" class="form-label text-start">Marital Status</p>
+        <p for="marriage" class="form-label text-start">Marital Status</p>
         <select v-model="form.maritalStatus" class="form-select" id="maritalStatus" required>
           <option value="single">Single</option>
           <option value="married">Married</option>
@@ -65,6 +65,10 @@
       <div class="mb-3">
         <p for="referredFrom" class="form-label text-start">Referred From</p>
         <input type="text" v-model="form.referredFrom" class="form-control" id="referredFrom" />
+      </div>
+      <div class="mb-3">
+        <p for="weight" class="form-label text-start">Weight</p>
+        <input type="text" v-model="form.weight" class="form-control" id="weight" />
       </div>
       <button type="submit" class="btn btn-primary w-100">Register</button>
     </form>
@@ -78,7 +82,9 @@
   import { reactive } from 'vue';
   import { useAuthentication } from '../stores/authetication-store';
   import LandingAuthComponent from '../components/landing-auth-component.vue';
+  import { useRouter } from 'vue-router';
   
+  const router = useRouter();
   const authStore = useAuthentication();
   const form = reactive({
     firstname: '',
@@ -96,12 +102,15 @@
     maritalStatus: 'single',
     referredFrom: '',
     role: 'user',
+    weight: '',
+    marriage: '',
   });
   
   const handleRegister = async () => {
     try {
       await authStore.register(form);
       console.log('Registration successful');
+      router.push('/login');
     } catch (error) {
       console.error('Registration failed:', error);
     }

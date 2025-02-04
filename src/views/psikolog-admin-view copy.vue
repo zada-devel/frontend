@@ -10,68 +10,34 @@
           <button @click="openAddModal" class="btn btn-primary">Add Psikolog</button>
         </div>
 
-        <table class="table table-bordered">
-          <thead>
-            <tr>
-              <th>Nama Psikolog</th>
-              <th>Spesialisasi</th>
-              <th>Jadwal Online</th>
-              <th>Jadwal Offline</th>
-              <th>Ulasan</th>
-              <th>Aksi</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr v-for="psikolog in psikologs" :key="psikolog.id">
-              <td>{{ psikolog.name }}</td>
-              <td>{{ psikolog.specialization || 'Tidak ada' }}</td>
-              <td>
-                <ul>
-                  <li v-for="slot in getOnlineSlots(psikolog)" :key="slot.date">
-                    <p>{{ slot.date }} | {{ slot.times.join(' - ') }}</p>
-                  </li>
-                </ul>
-              </td>
-              <td>
-                <ul>
-                  <li v-for="slot in getOfflineSlots(psikolog)" :key="slot.date">
-                    <p>{{ slot.date }} | {{ slot.times.join(' - ') }}</p>
-                  </li>
-                </ul>
-              </td>
-              <!-- <td>
-                <ul>
-                  <li v-for="slot in psikolog.availableSlots" :key="slot.date" v-if="slot.online">
-                    <strong>{{ slot.date }}</strong>
-                    <ul>
-                      <li v-for="time in slot.times" :key="time">{{ time }}</li>
-                    </ul>
-                  </li>
-                </ul>
-              </td> -->
-              <!-- <td>
-                <ul>
-                  <li v-for="slot in psikolog.availableSlots" :key="slot.date" v-if="slot.offline">
-                    <strong>{{ slot.date }}</strong>
-                    <ul>
-                      <li v-for="time in slot.times" :key="time">{{ time }}</li>
-                    </ul>
-                  </li>
-                </ul>
-              </td> -->
-              <td>
-                <ul>
-                  <li v-for="review in psikolog.reviews" :key="review.dateCreated">
-                    <p><strong>Rating:</strong> {{ review.rating }} / 5</p>
-                  </li>
-                </ul>
-              </td>
-              <td>
-                <button @click="openEditModal(psikolog)" class="btn btn-warning">Edit</button>
-              </td>
-            </tr>
-          </tbody>
-        </table>
+        <EasyDataTable
+          
+          :headers="headers"
+          :items="formattedPsikologs"
+          :rows-per-page="25"
+          :rows-items="[10, 25, 50, 100]"
+          table-class-name="customize-table"
+          buttons-pagination
+          show-index
+          theme-color="#1d90ff"
+          header-text-direction="center"
+          body-text-direction="center"
+        >
+          <template #item-jadwalOnline="{ jadwalOnline }">
+            <div class="schedule-cell">{{ jadwalOnline }}</div>
+          </template>
+          <template #item-jadwalOffline="{ jadwalOffline }">
+            <div class="schedule-cell">{{ jadwalOffline }}</div>
+          </template>
+          <template #item-actions="item">
+            <button 
+              class="btn btn-sm btn-primary"
+              @click="openEditModal(item.id)"
+            >
+              Edit
+            </button>
+        </template>
+        </EasyDataTable>
 
         <!-- Modal Add Psikolog -->
         <div v-if="isAddModalOpen" class="modal fade show" tabindex="-1" style="display: block;">
@@ -193,9 +159,20 @@
                   <input v-model="editForm.specialization" id="specialization" type="text" class="form-control" />
                 </div>
                 <div class="text-start">
-                  <label for="slots">Jadwal Online:</label>
-                  <textarea v-model="editForm.onlineSlots" id="slots" class="form-control"
-                    placeholder="e.g., 9:00, 15:00"></textarea>
+                  <label for="slots">Jadwal Online hari:</label>
+                  <input v-model="editForm.online_day" id="slots" type="text" class="form-control"></input>
+                </div>
+                <div class="text-start">
+                  <label for="slots">Jadwal Online jam:</label>
+                  <input v-model="editForm.online_hour" id="slots" type="text" class="form-control"></input>
+                </div>
+                <div class="text-start">
+                  <label for="slots">Jadwal Offline hari:</label>
+                  <input v-model="editForm.offline_day" id="slots" type="text" class="form-control"></input>
+                </div>
+                <div class="text-start">
+                  <label for="slots">Jadwal Offline jam:</label>
+                  <input v-model="editForm.offline_hour" id="slots" type="text" class="form-control"></input>
                 </div>
               </div>
               <div class="modal-footer">
@@ -211,10 +188,25 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, computed } from 'vue';
+import { ref, onMounted, computed} from 'vue';
 import HeaderComponent from '../components/header-component.vue';
 import LandingComponent from '../components/landing-component.vue';
 import axios from 'axios';
+import EasyDataTable from "vue3-easy-data-table";
+import 'vue3-easy-data-table/dist/style.css';
+
+
+const headers = [
+  { text: "Nama Psikolog", value: "name" },
+  { text: "Spesialisasi", value: "specialization" },
+  { text: "Jadwal Online", value: "onlineSchedule" },
+  { text: "Jadwal Jam Online", value: "onlineHour" },
+  { text: "Jadwal Offline", value: "offlineSchedule" },
+  { text: "Jadwal Jam Offline", value: "offlineHour" },
+  { text: "aksi", value: "actions" }
+];
+
+
 
 // Refs to hold state
 interface DayOption {
@@ -237,13 +229,6 @@ interface AvailableSlot {
   offline?: OnlineSlot[];  // Menyimpan jadwal offline
 }
 
-interface Psikolog {
-  id: number;
-  name: string;
-  specialization: string;
-  availableSlots: AvailableSlot[];
-  reviews: { dateCreated: string; rating: number }[];
-}
 
 // Daftar hari dengan nilai unik
 const days = ref<DayOption[]>([
@@ -257,7 +242,6 @@ const days = ref<DayOption[]>([
 ]);
 
 // Array untuk menyimpan pilihan yang dipilih
-
 const loading = ref(true);
 const error = ref('');
 const psikologs = ref<any[]>([]);
@@ -281,7 +265,11 @@ const offlineHourOff = computed(() => {
 const editForm = ref({
   name: '',
   specialization: '',
-  onlineSlots: ''
+  online_day: '',
+  online_hour: '',
+  offline_day: '',
+  offline_hour: ''
+  // onlineSlots: ''
 });
 const addForm = ref({
   description: '',
@@ -296,33 +284,73 @@ const addForm = ref({
   specialization: ''
 });
 
-const getOfflineSlots = (psikolog: Psikolog): { date: string; times: string[] }[] => {
-  const slots = psikolog.availableSlots || [];
-  const offlineSlots = slots.flatMap((slot: AvailableSlot) => {
-    if (slot.offline) {
-      return slot.offline.map((o: OnlineSlot) => ({
-        date: o.date,
-        times: o.times
-      }));
-    }
-    return [];
-  });
-  return offlineSlots;
-};
 
-const getOnlineSlots = (psikolog: Psikolog): { date: string; times: string[] }[] => {
-  const slots = psikolog.availableSlots || [];
-  const onlineSlots = slots.flatMap((slot: AvailableSlot) => {
-    if (slot.online) {
-      return slot.online.map((o: OnlineSlot) => ({
-        date: o.date,
-        times: o.times
-      }));
-    }
-    return [];
+
+// const getOfflineSlots = (psikolog: Psikolog): { date: string; times: string[] }[] => {
+//   const slots = psikolog.availableSlots || [];
+//   const offlineSlots = slots.flatMap((slot: AvailableSlot) => {
+//     if (slot.offline) {
+//       return slot.offline.map((o: OnlineSlot) => ({
+//         date: o.date,
+//         times: o.times
+//       }));
+//     }
+//     return [];
+//   });
+//   return offlineSlots;
+// };
+
+// const getOnlineSlots = (psikolog: Psikolog): { date: string; times: string[] }[] => {
+//   const slots = psikolog.availableSlots || [];
+//   const onlineSlots = slots.flatMap((slot: AvailableSlot) => {
+//     if (slot.online) {
+//       return slot.online.map((o: OnlineSlot) => ({
+//         date: o.date,
+//         times: o.times
+//       }));
+//     }
+//     return [];
+//   });
+//   return onlineSlots;
+// };
+
+// const formatSchedule = (slots: any[]) => {
+//   if (!slots || slots.length === 0) return '-';
+  
+//   const dates = slots.map(slot => {
+//     const date = new Date(slot.date);
+//     const formattedDate = date.toLocaleDateString('id-ID', {
+//       year: 'numeric',
+//       month: 'short',
+//       day: 'numeric',
+//     });
+
+//     const formattedTimes = slot.times.map((time: any) => `${time}`).join('-');
+//     return `${formattedDate} (${formattedTimes})\n`; // Added newline here
+//   });
+  
+//   return dates.join('|| ');
+// };
+
+const formattedPsikologs = computed(() => {
+  return psikologs.value.map(psikolog => {
+    // const onlineSlots = getOnlineSlots(psikolog);
+    // const offlineSlots = getOfflineSlots(psikolog);
+
+    return {
+      id: psikolog.id,
+      name: psikolog.name,
+      specialization: psikolog.specialization,
+      onlineSchedule: psikolog.online_day,
+      onlineHour: psikolog.online_hour,
+      offlineSchedule: psikolog.offline_day,
+      offlineHour: psikolog.offline_hour
+      // onlineSchedule: formatSchedule(onlineSlots),
+      // offlineSchedule: formatSchedule(offlineSlots)
+      // actions: `<button class='btn btn-sm btn-primary' @click='editPsikolog("${psikolog.id}")'>Edit</button>`
+    };
   });
-  return onlineSlots;
-};
+});
 
 // Open the modal for adding a psikolog
 const openAddModal = () => {
@@ -334,8 +362,9 @@ const closeAddModal = () => {
   isAddModalOpen.value = false;
 };
 
-const openEditModal = (psikolog: any) => {
-  editForm.value = { ...psikolog };
+const openEditModal = (id: any) => {
+  editForm.value = { ...psikologs.value.find((psikolog: any) => psikolog.id === id) };
+  console.log('editForm', editForm.value);
   isModalOpen.value = true;
 };
 
@@ -372,15 +401,27 @@ const psikologStore = usePsikologStore();
 
 onMounted(async () => {
   try {
-    await psikologStore.fetchPsikologs(); 
+    await psikologStore.fetchlistPsikologs(); 
     psikologs.value = psikologStore.psikologs;
-  } catch (e) {
-    console.error("Failed to fetch psikolog data:", e);
-    error.value = "Failed to load psikolog data.";
+    console.dir('psikologs', psikologs.value);
+  } catch (err) {
+    error.value = 'Failed to load data';
   } finally {
     loading.value = false;
   }
 });
+
+// onMounted(async () => {
+//   try {
+//     await psikologStore.fetchPsikologs(); 
+//     psikologs.value = psikologStore.psikologs;
+//   } catch (e) {
+//     console.error("Failed to fetch psikolog data:", e);
+//     error.value = "Failed to load psikolog data.";
+//   } finally {
+//     loading.value = false;
+//   }
+// });
 
 </script>
 
@@ -416,7 +457,10 @@ ul li strong {
 }
 
 /* Modal styling */
+
 .modal.show {
+  align-items: center;
+  justify-content: center;
   display: block;
 }
 
@@ -435,5 +479,80 @@ ul li strong {
 div.text-start {
   margin-bottom: 20px;
   margin-top: 20px;
+}
+
+.customize-table {
+  --easy-table-border: 1px solid #445269;
+  --easy-table-row-border: 1px solid #445269;
+
+  --easy-table-header-font-size: 14px;
+  --easy-table-header-height: 50px;
+  --easy-table-header-font-color: #c1cad4;
+  --easy-table-header-background-color: #2d3a4f;
+
+  --easy-table-header-item-padding: 10px 15px;
+
+  --easy-table-body-even-row-font-color: #fff;
+  --easy-table-body-even-row-background-color: #4c5d7a;
+
+  --easy-table-body-row-font-color: #080a0e;
+  --easy-table-body-row-background-color: #e0e2e6;
+  --easy-table-body-row-height: 50px;
+  --easy-table-body-row-font-size: 14px;
+
+  --easy-table-body-row-hover-font-color: #0b0c0d;
+  --easy-table-body-row-hover-background-color: #eee;
+
+  --easy-table-body-item-padding: 10px 15px;
+
+  --easy-table-footer-background-color: #2d3a4f;
+  --easy-table-footer-font-color: #c0c7d2;
+  --easy-table-footer-font-size: 14px;
+  --easy-table-footer-padding: 0px 10px;
+  --easy-table-footer-height: 50px;
+
+  --easy-table-rows-per-page-selector-width: 70px;
+  --easy-table-rows-per-page-selector-option-padding: 10px;
+  --easy-table-rows-per-page-selector-z-index: 1;
+
+
+  --easy-table-scrollbar-track-color: #2d3a4f;
+  --easy-table-scrollbar-color: #2d3a4f;
+  --easy-table-scrollbar-thumb-color: #4c5d7a;;
+  --easy-table-scrollbar-corner-color: #2d3a4f;
+
+  --easy-table-loading-mask-background-color: #2d3a4f;
+}
+
+.customize-table thead th {
+  font-weight: 600;
+  color: #374151;
+}
+
+.customize-table tbody tr {
+  height: auto;
+  min-height: 48px;
+}
+
+.schedule-cell {
+  white-space: pre-wrap;
+  padding: 8px 0;
+  line-height: 1.4;
+}
+
+:deep(.ez-table) {
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
+}
+
+:deep(.ez-table td) {
+  padding: 8px 16px;
+  vertical-align: top;
+}
+
+.btn-sm {
+  font-size: 14px;
+  padding: 4px 8px;
 }
 </style>

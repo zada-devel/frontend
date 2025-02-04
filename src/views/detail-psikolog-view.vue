@@ -42,7 +42,7 @@
                 </select>
               </div>
 
-              <div class="mb-2 text-start">
+              <!-- <div class="mb-2 text-start">
                 <label for="session-date" class="form-label text-start">Tanggal</label>
                 <input 
                   type="date" 
@@ -50,6 +50,14 @@
                   class="form-control" 
                   v-model="selectedSession.date"
                 />
+              </div> -->
+              <div class="mb-2 text-start">
+                <label for="session-date" class="form-label text-start">Tanggal</label>
+                <select id="session-date" class="form-select" v-model="selectedSession.date">
+                  <option v-for="date in availableDates" :key="date" :value="date">
+                    {{ date }}
+                  </option>
+                </select>
               </div>
 
               <div class="mb-2 text-start">
@@ -60,6 +68,7 @@
                   </option>
                 </select>
               </div>
+
 
               <button type="submit" class="btn btn-primary w-100">Pilih Sesi</button>
             </form>
@@ -143,7 +152,75 @@ export default {
       time: '',
     });
 
-    const availableTimes = ['09.00 WIB', '10.00 WIB', '11.00 WIB', '13.00 WIB'];
+    const availableDates = computed(() => {
+      const psikolog = psikologStore.selectedPsikolog;
+      const selectedType = selectedSession.value.type;
+
+      if (!psikolog) return [];
+
+      let dateSet = new Set<string>();
+
+      if (selectedType === "Online") {
+        psikolog.availableSlots.forEach((slot) => {
+          slot.online?.forEach((o) => dateSet.add(o.date));
+        });
+      } else if (selectedType === "Offline") {
+        psikolog.availableSlots.forEach((slot) => {
+          slot.offline?.forEach((o) => dateSet.add(o.date));
+        });
+      }
+
+      return Array.from(dateSet).sort();
+    });
+
+    const generateTimeRange = (start: string, end: string, interval: number = 60) => {
+      const timeList: string[] = [];
+      let [startHour, startMinute] = start.split(":").map(Number);
+      let [endHour, endMinute] = end.split(":").map(Number);
+
+      while (startHour < endHour || (startHour === endHour && startMinute <= endMinute)) {
+        timeList.push(`${String(startHour).padStart(2, "0")}:${String(startMinute).padStart(2, "0")}`);
+        startMinute += interval;
+        if (startMinute >= 60) {
+          startMinute = 0;
+          startHour += 1;
+        }
+      }
+
+      return timeList;
+    };
+
+    const availableTimes = computed(() => {
+      const psikolog = psikologStore.selectedPsikolog;
+      const selectedType = selectedSession.value.type;
+      
+
+      if (!psikolog) return [];
+
+      let timeSet = new Set<string>(); // Menggunakan Set untuk menghindari duplikat
+
+        if (selectedType === 'Online') {
+          psikolog.availableSlots.forEach(slot => {
+            if (slot.online) {
+              slot.online.forEach(o => {
+                generateTimeRange(o.times[0], o.times[1]).forEach(time => timeSet.add(time));
+              });
+            }
+          });
+        } else if (selectedType === 'Offline') {
+          psikolog.availableSlots.forEach(slot => {
+            if (slot.offline) {
+              slot.offline.forEach(o => {
+                generateTimeRange(o.times[0], o.times[1]).forEach(time => timeSet.add(time));
+              });
+            }
+          });
+        }
+
+        return Array.from(timeSet).sort(); // Kembalikan dalam bentuk array yang sudah diurutkan
+      });
+
+    // const availableTimes = ['09.00 WIB', '10.00 WIB', '11.00 WIB', '13.00 WIB'];
     const sessionBooked = ref(false);
     const uploadedFile = ref<File | null>(null);
     const paymentMethod = ref('Transfer');
@@ -178,6 +255,7 @@ export default {
     return {
       psikolog,
       selectedSession,
+      availableDates,
       availableTimes,
       sessionBooked,
       uploadedFile,

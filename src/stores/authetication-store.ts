@@ -18,6 +18,8 @@ interface UserData {
   maritalStatus: string;
   referredFrom?: string;
   role: string;
+  weight: string;
+  marriage: string;
 }
 
 export const useAuthentication = defineStore('authentication', () => {
@@ -62,7 +64,7 @@ export const useAuthentication = defineStore('authentication', () => {
 
   const register = async (userData: UserData) => {
     try {
-      const response = await axios.post('/register', userData);
+      const response = await axios.post('/createuser', userData);
       return response.data;
     } catch (error) {
       console.error('Error during registration:', error);

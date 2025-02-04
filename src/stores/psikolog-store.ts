@@ -1,11 +1,19 @@
 import { defineStore } from 'pinia';
 import axios from 'axios';
 
+interface AvailableSlot {
+  date: string;
+  times: string[];
+}
+
 interface Psikolog {
   specialization: string;
   name: string;
   id: number;
-  availableSlots: [];
+  availableSlots: {
+    online: AvailableSlot[];
+    offline: AvailableSlot[];
+  }[];
   reviews: [];
   imgSrc: string;
 }
@@ -18,6 +26,37 @@ export const usePsikologStore = defineStore('psikologStore', {
     selectedPsikolog: null as Psikolog | null,
   }),
   actions: {
+    async fetchlistPsikologs() {
+      this.loading = true;
+      this.error = '';
+      try {
+        const response = await axios.get('get_psikolog_list', {
+          headers: { Authorization: `Bearer ${localStorage.getItem('token')}` },
+        });
+
+        if (response.data.status === 'success') {
+          console.log('responsenya', response.data.status);
+          const psikologList = response.data.psikologs.map((psychologist: any) => ({
+            id: psychologist.id,
+            name: psychologist.name,
+            specialization: psychologist.specialization || '-',
+            online_day: psychologist.online_day || '-',
+            online_hour: psychologist.online_hour || '-',
+            offline_day: psychologist.offline_day || '-',
+            offline_hour: psychologist.offline_hour || '-',
+            reviews: psychologist.reviews || [],
+            imgSrc: psychologist.imgSrc || '',
+          }));
+          this.psikologs = psikologList;
+        } else {
+          this.error = 'Gagal mengambil data psikolog.';
+        }
+      } catch (err) {
+        this.error = err instanceof Error ? err.message : 'Terjadi kesalahan.';
+      } finally {
+        this.loading = false;
+      }
+    },
     async fetchPsikologs() {
       this.loading = true;
       this.error = '';
@@ -89,7 +128,7 @@ export const usePsikologStore = defineStore('psikologStore', {
       this.loading = true;
       this.error = '';
       try {
-        const response = await axios.post('save_psikolog', psikolog, {
+        const response = await axios.post('psikolog', psikolog, {
           headers: { Authorization: `Bearer ${localStorage.getItem('token')}` },
         });
     
