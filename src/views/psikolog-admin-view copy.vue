@@ -159,20 +159,68 @@
                   <input v-model="editForm.specialization" id="specialization" type="text" class="form-control" />
                 </div>
                 <div class="text-start">
-                  <label for="slots">Jadwal Online hari:</label>
-                  <input v-model="editForm.online_day" id="slots" type="text" class="form-control"></input>
+                  <label for="specialization">Deskripsi:</label>
+                  <input v-model="editForm.description" id="description" type="text" class="form-control" />
                 </div>
                 <div class="text-start">
-                  <label for="slots">Jadwal Online jam:</label>
-                  <input v-model="editForm.online_hour" id="slots" type="text" class="form-control"></input>
+                  <label for="online_day">Jadwal Online Hari:</label>
+                  <!-- <input v-model="addForm.online_day" id="online_day" type="text" class="form-control" /> -->
+                  <div class="checkbox-grid">
+                    <label v-for="day in days" :key="day.label" class="d-block">
+                      <input type="checkbox" v-model="selectedDaysOnedit" :value="day.label" />
+                      {{ day.label }}
+                    </label>
+                  </div>
+
                 </div>
                 <div class="text-start">
-                  <label for="slots">Jadwal Offline hari:</label>
-                  <input v-model="editForm.offline_day" id="slots" type="text" class="form-control"></input>
+                  <label for="online_hour">Jadwal Online Jam:</label>
+                  <!-- <input v-model="addForm.online_hour" id="online_hour" type="text" class="form-control" /> -->
+                  <div class="d-flex gap-3">
+                  <div class="w-50">
+                    <label for="online_start_hour">Start:</label>
+                    <select v-model="startHourOnedit" id="online_start_hour" class="form-control">
+                      <option v-for="hour in hours" :key="hour" :value="hour">{{ hour }}</option>
+                    </select>
+                  </div>
+
+                  <div class="w-50">
+                    <label for="online_end_hour">End:</label>
+                    <select v-model="endHourOnedit" id="online_end_hour" class="form-control">
+                      <option v-for="hour in hours" :key="hour" :value="hour">{{ hour }}</option>
+                    </select>
+                  </div>
+                </div>
                 </div>
                 <div class="text-start">
-                  <label for="slots">Jadwal Offline jam:</label>
-                  <input v-model="editForm.offline_hour" id="slots" type="text" class="form-control"></input>
+                  <label for="offline_day">Jadwal Offline Hari:</label>
+                  <!-- <input v-model="addForm.offline_day" id="offline_day" type="text" class="form-control" /> -->
+                  <div class="checkbox-grid">
+                    <label v-for="day in days" :key="day.label" class="d-block">
+                      <input type="checkbox" v-model="selectedDaysOffedit" :value="day.label" />
+                      {{ day.label }}
+                    </label>
+                  </div>
+                </div>
+                
+                  <div class="text-start">
+                  <label for="offline_hour">Jadwal Offline Jam:</label>
+                  <!-- <input v-model="addForm.offline_hour" id="offline_hour" type="text" class="form-control" /> -->
+                  <div class="d-flex gap-3">
+                  <div class="w-50">
+                    <label for="online_start_hour">Start:</label>
+                    <select v-model="startHourOffedit" id="online_start_hour" class="form-control">
+                      <option v-for="hour in hours" :key="hour" :value="hour">{{ hour }}</option>
+                    </select>
+                  </div>
+
+                  <div class="w-50">
+                    <label for="online_end_hour">End:</label>
+                    <select v-model="endHourOffedit" id="online_end_hour" class="form-control">
+                      <option v-for="hour in hours" :key="hour" :value="hour">{{ hour }}</option>
+                    </select>
+                  </div>
+                </div>
                 </div>
               </div>
               <div class="modal-footer">
@@ -214,6 +262,18 @@ interface DayOption {
   value: number;
 }
 
+const generateHourRange = (start: string, end: string): string[] => {
+  const startHour = parseInt(start, 10);
+  const endHour = parseInt(end, 10);
+  const result: string[] = [];
+
+  for (let i = startHour; i <= endHour; i++) {
+    result.push(`${i.toString().padStart(2, "0")}:00`);
+  }
+
+  return result;
+};
+
 const hours = ref<string[]>([]);
 for (let i = 0; i < 24; i++) {
   hours.value.push(i.toString().padStart(2, '0'));
@@ -232,14 +292,15 @@ interface AvailableSlot {
 
 // Daftar hari dengan nilai unik
 const days = ref<DayOption[]>([
-  { label: 'Senin', value: 1 },
-  { label: 'Selasa', value: 2 },
-  { label: 'Rabu', value: 3 },
-  { label: 'Kamis', value: 4 },
-  { label: 'Jumat', value: 5 },
-  { label: 'Sabtu', value: 6 },
-  { label: 'Minggu', value: 7 },
+  { label: 'Senin', value: 0 },
+  { label: 'Selasa', value: 1 },
+  { label: 'Rabu', value: 2 },
+  { label: 'Kamis', value: 3 },
+  { label: 'Jumat', value: 4 },
+  { label: 'Sabtu', value: 5 },
+  { label: 'Minggu', value: 6 },
 ]);
+
 
 // Array untuk menyimpan pilihan yang dipilih
 const loading = ref(true);
@@ -262,15 +323,65 @@ const offlineHourOff = computed(() => {
   return startHourOff.value && endHourOff.value ? `${startHourOff.value}#${endHourOff.value}` : '';
 });
 
+const getStartHour = (hourString: string | undefined) => {
+  const hours = hourString?.split(",") || [];
+  return hours.length > 0 ? hours[0].split(":")[0].padStart(2, "0") : "";
+};
+
+const getEndHour = (hourString: string | undefined) => {
+  const hours = hourString?.split(",") || [];
+  return hours.length > 0 ? hours[hours.length - 1].split(":")[0].padStart(2, "0") : "";
+};
+
+const startHourOnedit = computed(() => getStartHour(editForm.value.online_hour));
+const endHourOnedit = computed(() => getEndHour(editForm.value.online_hour));
+const startHourOffedit = computed(() => getStartHour(editForm.value.offline_hour));
+const endHourOffedit = computed(() => getEndHour(editForm.value.offline_hour));
+
+const selectedStartHourOn = ref<string>("");
+const selectedEndHourOn = ref<string>("");
+const selectedStartHourOff = ref<string>("");
+const selectedEndHourOff = ref<string>("");
+
+const selectedDaysOnedit = ref<string[]>([]);
+  const parseOnlineDays = () => {
+    selectedDaysOnedit.value = editForm.value.online_day.split(",").map((day) => day.trim());
+  // const onlineDaysArray = editForm.value.online_day.split(', ').map(day => day.trim());
+  // selectedDaysOnedit.value = days.value
+  //   .filter(day => onlineDaysArray.includes(day.label))
+  //   .map(day => day.value);
+};
+
+const selectedDaysOffedit = ref<string[]>([]);
+const parseOfflineDays = () => {
+  selectedDaysOffedit.value = editForm.value.offline_day.split(",").map((day) => day.trim());
+  // const offlineDaysArray = editForm.value.offline_day.split(', ').map(day => day.trim());
+  // selectedDaysOffedit.value = days.value
+  //   .filter(day => offlineDaysArray.includes(day.label))
+  //   .map(day => day.value);
+};
+
+
+// Menggabungkan hasil parsing
+// const formattedOfflineHour = computed(() => {
+//   return `${startHourOff.value}#${endHourOff.value}`;
+// });
+
 const editForm = ref({
+  id: '',
   name: '',
   specialization: '',
   online_day: '',
   online_hour: '',
   offline_day: '',
-  offline_hour: ''
+  offline_hour: '',
+  description: '',
+  reviews: [],
+  imgSrc: ''
   // onlineSlots: ''
 });
+
+
 const addForm = ref({
   description: '',
   experience: '',
@@ -284,53 +395,6 @@ const addForm = ref({
   specialization: ''
 });
 
-
-
-// const getOfflineSlots = (psikolog: Psikolog): { date: string; times: string[] }[] => {
-//   const slots = psikolog.availableSlots || [];
-//   const offlineSlots = slots.flatMap((slot: AvailableSlot) => {
-//     if (slot.offline) {
-//       return slot.offline.map((o: OnlineSlot) => ({
-//         date: o.date,
-//         times: o.times
-//       }));
-//     }
-//     return [];
-//   });
-//   return offlineSlots;
-// };
-
-// const getOnlineSlots = (psikolog: Psikolog): { date: string; times: string[] }[] => {
-//   const slots = psikolog.availableSlots || [];
-//   const onlineSlots = slots.flatMap((slot: AvailableSlot) => {
-//     if (slot.online) {
-//       return slot.online.map((o: OnlineSlot) => ({
-//         date: o.date,
-//         times: o.times
-//       }));
-//     }
-//     return [];
-//   });
-//   return onlineSlots;
-// };
-
-// const formatSchedule = (slots: any[]) => {
-//   if (!slots || slots.length === 0) return '-';
-  
-//   const dates = slots.map(slot => {
-//     const date = new Date(slot.date);
-//     const formattedDate = date.toLocaleDateString('id-ID', {
-//       year: 'numeric',
-//       month: 'short',
-//       day: 'numeric',
-//     });
-
-//     const formattedTimes = slot.times.map((time: any) => `${time}`).join('-');
-//     return `${formattedDate} (${formattedTimes})\n`; // Added newline here
-//   });
-  
-//   return dates.join('|| ');
-// };
 
 const formattedPsikologs = computed(() => {
   return psikologs.value.map(psikolog => {
@@ -364,16 +428,66 @@ const closeAddModal = () => {
 
 const openEditModal = (id: any) => {
   editForm.value = { ...psikologs.value.find((psikolog: any) => psikolog.id === id) };
-  console.log('editForm', editForm.value);
+  console.log('startHourOffedit', startHourOffedit.value);
+  console.log('endHourOffedit', endHourOffedit.value);
   isModalOpen.value = true;
+  parseOfflineDays();
+  parseOnlineDays();
+  console.log('editForm Value', editForm.value);
 };
+
 
 const closeModal = () => {
   isModalOpen.value = false;
 };
 
-const saveChanges = () => {
-  closeModal();
+const saveChanges = async () => {
+  
+  // const onlineDaysFormatted = selectedDaysOnedit.value;
+  // const offlineDaysFormatted = selectedDaysOffedit.value.join("#");
+  // const onlineHourFormatted = startHourOnedit.value + "#" + endHourOnedit.value;
+  // const offlineHourFormatted = startHourOffedit.value + "#" + endHourOffedit.value;
+  // editForm.value.online_day = onlineDaysFormatted;
+  // editForm.value.offline_day = offlineDaysFormatted;
+  // editForm.value.online_hour = onlineHourFormatted;
+  // editForm.value.offline_hour = offlineHourFormatted;
+
+  selectedStartHourOn.value = startHourOnedit.value;
+  selectedEndHourOn.value = endHourOnedit.value;
+  selectedStartHourOff.value = startHourOffedit.value;
+  selectedEndHourOff.value = endHourOffedit.value;
+  editForm.value.online_day = selectedDaysOnedit.value.join(", ");
+  editForm.value.offline_day = selectedDaysOffedit.value.join(", ");
+
+  const onlineHours = generateHourRange(selectedStartHourOn.value, selectedEndHourOn.value);
+  const offlineHours = generateHourRange(selectedStartHourOff.value, selectedEndHourOff.value);
+
+
+  
+  const { id, reviews, imgSrc, ...formData } = editForm.value;
+  // formData.online_day = editForm.value.online_day;
+  // formData.offline_day = editForm.value.offline_day;
+  formData.online_hour = onlineHours.join(",");
+  formData.offline_hour = offlineHours.join(",");
+  formData.description = editForm.value.description;
+  formData.specialization = editForm.value.specialization;
+  formData.name = editForm.value.name;
+
+  try {
+    const token = localStorage.getItem('token');
+    console.log('editForm', formData);
+    const response = await axios.put(`psikolog/${editForm.value.id}`, formData, {
+      headers: {
+        Authorization: `Bearer ${token}`, 
+      },
+    });
+    console.log('Psikolog added:', response.data);
+    closeAddModal();
+  } catch (e) {
+    console.error('Error adding psikolog:', e);
+
+    error.value = 'Failed to add psikolog.';
+  }
 };
 
 const saveNewPsikolog = async () => {

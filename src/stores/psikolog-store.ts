@@ -33,7 +33,7 @@ export const usePsikologStore = defineStore('psikologStore', {
         const response = await axios.get('get_psikolog_list', {
           headers: { Authorization: `Bearer ${localStorage.getItem('token')}` },
         });
-
+        console.log('responsenya', response.data.status);
         if (response.data.status === 'success') {
           console.log('responsenya', response.data.status);
           const psikologList = response.data.psikologs.map((psychologist: any) => ({

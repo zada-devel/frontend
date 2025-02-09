@@ -37,7 +37,7 @@
               <div class="mb-1 text-start">
                 <label for="session-type" class="form-label text-start">Tipe Sesi</label>
                 <select id="session-type" class="form-select" v-model="selectedSession.type">
-                  <option value="Online">Online</option>
+                  <!-- <option value="Online">Online</option> -->
                   <option value="Offline">Offline</option>
                 </select>
               </div>

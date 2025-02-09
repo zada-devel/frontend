@@ -336,6 +336,7 @@ const closeAddModal = () => {
 
 const openEditModal = (psikolog: any) => {
   editForm.value = { ...psikolog };
+  console.log(editForm.value);
   isModalOpen.value = true;
 };
 
