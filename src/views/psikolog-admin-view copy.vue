@@ -478,14 +478,9 @@ const openEditModal = (id: any) => {
 
   startHourOffedit.value = existingStartOff;
   endHourOffedit.value = existingEndOff;
-
-
-  console.log('startHourOffedit', startHourOffedit.value);
-  console.log('endHourOffedit', endHourOffedit.value);
   isModalOpen.value = true;
   parseOfflineDays();
   parseOnlineDays();
-  console.log('editForm Value', editForm.value);
 };
 
 
