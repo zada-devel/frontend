@@ -46,6 +46,7 @@ export const usePsikologStore = defineStore('psikologStore', {
             offline_hour: psychologist.offline_hour || '-',
             reviews: psychologist.reviews || [],
             imgSrc: psychologist.imgSrc || '',
+            description: psychologist.description || '',
           }));
           this.psikologs = psikologList;
         } else {
@@ -73,6 +74,7 @@ export const usePsikologStore = defineStore('psikologStore', {
             availableSlots: psychologist.availableSlots,
             reviews: psychologist.reviews || [],
             imgSrc: psychologist.imgSrc || '',
+            description: psychologist.description || '',
           }));
           this.psikologs = psikologList;
         } else {

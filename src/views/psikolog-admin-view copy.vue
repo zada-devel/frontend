@@ -166,12 +166,11 @@
                   <label for="online_day">Jadwal Online Hari:</label>
                   <!-- <input v-model="addForm.online_day" id="online_day" type="text" class="form-control" /> -->
                   <div class="checkbox-grid">
-                    <label v-for="day in days" :key="day.label" class="d-block">
-                      <input type="checkbox" v-model="selectedDaysOnedit" :value="day.label" />
+                    <label v-for="day in days" :key="day.value" class="d-block">
+                      <input type="checkbox" v-model="selectedDaysOnedit" :value="day.value" />
                       {{ day.label }}
                     </label>
                   </div>
-
                 </div>
                 <div class="text-start">
                   <label for="online_hour">Jadwal Online Jam:</label>
@@ -196,8 +195,8 @@
                   <label for="offline_day">Jadwal Offline Hari:</label>
                   <!-- <input v-model="addForm.offline_day" id="offline_day" type="text" class="form-control" /> -->
                   <div class="checkbox-grid">
-                    <label v-for="day in days" :key="day.label" class="d-block">
-                      <input type="checkbox" v-model="selectedDaysOffedit" :value="day.label" />
+                    <label v-for="day in days" :key="day.value" class="d-block">
+                      <input type="checkbox" v-model="selectedDaysOffedit" :value="day.value" />
                       {{ day.label }}
                     </label>
                   </div>
@@ -236,7 +235,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, computed} from 'vue';
+import { ref, onMounted, computed, watch} from 'vue';
 import HeaderComponent from '../components/header-component.vue';
 import LandingComponent from '../components/landing-component.vue';
 import axios from 'axios';
@@ -261,18 +260,6 @@ interface DayOption {
   label: string;
   value: number;
 }
-
-const generateHourRange = (start: string, end: string): string[] => {
-  const startHour = parseInt(start, 10);
-  const endHour = parseInt(end, 10);
-  const result: string[] = [];
-
-  for (let i = startHour; i <= endHour; i++) {
-    result.push(`${i.toString().padStart(2, "0")}:00`);
-  }
-
-  return result;
-};
 
 const hours = ref<string[]>([]);
 for (let i = 0; i < 24; i++) {
@@ -333,32 +320,22 @@ const getEndHour = (hourString: string | undefined) => {
   return hours.length > 0 ? hours[hours.length - 1].split(":")[0].padStart(2, "0") : "";
 };
 
-const startHourOnedit = computed(() => getStartHour(editForm.value.online_hour));
-const endHourOnedit = computed(() => getEndHour(editForm.value.online_hour));
-const startHourOffedit = computed(() => getStartHour(editForm.value.offline_hour));
-const endHourOffedit = computed(() => getEndHour(editForm.value.offline_hour));
 
-const selectedStartHourOn = ref<string>("");
-const selectedEndHourOn = ref<string>("");
-const selectedStartHourOff = ref<string>("");
-const selectedEndHourOff = ref<string>("");
 
-const selectedDaysOnedit = ref<string[]>([]);
+const selectedDaysOnedit = ref<number[]>([]);
   const parseOnlineDays = () => {
-    selectedDaysOnedit.value = editForm.value.online_day.split(",").map((day) => day.trim());
-  // const onlineDaysArray = editForm.value.online_day.split(', ').map(day => day.trim());
-  // selectedDaysOnedit.value = days.value
-  //   .filter(day => onlineDaysArray.includes(day.label))
-  //   .map(day => day.value);
+  const onlineDaysArray = editForm.value.online_day.split(', ').map(day => day.trim());
+  selectedDaysOnedit.value = days.value
+    .filter(day => onlineDaysArray.includes(day.label))
+    .map(day => day.value);
 };
 
-const selectedDaysOffedit = ref<string[]>([]);
+const selectedDaysOffedit = ref<number[]>([]);
 const parseOfflineDays = () => {
-  selectedDaysOffedit.value = editForm.value.offline_day.split(",").map((day) => day.trim());
-  // const offlineDaysArray = editForm.value.offline_day.split(', ').map(day => day.trim());
-  // selectedDaysOffedit.value = days.value
-  //   .filter(day => offlineDaysArray.includes(day.label))
-  //   .map(day => day.value);
+  const offlineDaysArray = editForm.value.offline_day.split(', ').map(day => day.trim());
+  selectedDaysOffedit.value = days.value
+    .filter(day => offlineDaysArray.includes(day.label))
+    .map(day => day.value);
 };
 
 
@@ -381,6 +358,12 @@ const editForm = ref({
   // onlineSlots: ''
 });
 
+// const startHourOnedit = computed(() => getStartHour(editForm.value.online_hour));
+// const endHourOnedit = computed(() => getEndHour(editForm.value.online_hour));
+// const startHourOffedit = computed(() => getStartHour(editForm.value.offline_hour));
+// const endHourOffedit = computed(() => getEndHour(editForm.value.offline_hour));
+
+
 
 const addForm = ref({
   description: '',
@@ -395,6 +378,55 @@ const addForm = ref({
   specialization: ''
 });
 
+
+
+
+
+// const getOfflineSlots = (psikolog: Psikolog): { date: string; times: string[] }[] => {
+//   const slots = psikolog.availableSlots || [];
+//   const offlineSlots = slots.flatMap((slot: AvailableSlot) => {
+//     if (slot.offline) {
+//       return slot.offline.map((o: OnlineSlot) => ({
+//         date: o.date,
+//         times: o.times
+//       }));
+//     }
+//     return [];
+//   });
+//   return offlineSlots;
+// };
+
+// const getOnlineSlots = (psikolog: Psikolog): { date: string; times: string[] }[] => {
+//   const slots = psikolog.availableSlots || [];
+//   const onlineSlots = slots.flatMap((slot: AvailableSlot) => {
+//     if (slot.online) {
+//       return slot.online.map((o: OnlineSlot) => ({
+//         date: o.date,
+//         times: o.times
+//       }));
+//     }
+//     return [];
+//   });
+//   return onlineSlots;
+// };
+
+// const formatSchedule = (slots: any[]) => {
+//   if (!slots || slots.length === 0) return '-';
+  
+//   const dates = slots.map(slot => {
+//     const date = new Date(slot.date);
+//     const formattedDate = date.toLocaleDateString('id-ID', {
+//       year: 'numeric',
+//       month: 'short',
+//       day: 'numeric',
+//     });
+
+//     const formattedTimes = slot.times.map((time: any) => `${time}`).join('-');
+//     return `${formattedDate} (${formattedTimes})\n`; // Added newline here
+//   });
+  
+//   return dates.join('|| ');
+// };
 
 const formattedPsikologs = computed(() => {
   return psikologs.value.map(psikolog => {
@@ -426,8 +458,28 @@ const closeAddModal = () => {
   isAddModalOpen.value = false;
 };
 
+const startHourOnedit = ref(''); // Ganti computed dengan ref
+const endHourOnedit = ref('');
+const startHourOffedit = ref('');
+const endHourOffedit = ref('');
+
 const openEditModal = (id: any) => {
-  editForm.value = { ...psikologs.value.find((psikolog: any) => psikolog.id === id) };
+  const psikolog = psikologs.value.find((p: any) => p.id === id);
+  editForm.value = { ...psikolog };
+
+  const existingStartOn = getStartHour(editForm.value.online_hour);
+  const existingEndOn = getEndHour(editForm.value.online_hour);
+
+  startHourOnedit.value = existingStartOn;
+  endHourOnedit.value = existingEndOn;
+  
+  const existingStartOff = getStartHour(editForm.value.offline_hour);
+  const existingEndOff = getEndHour(editForm.value.offline_hour);
+
+  startHourOffedit.value = existingStartOff;
+  endHourOffedit.value = existingEndOff;
+
+
   console.log('startHourOffedit', startHourOffedit.value);
   console.log('endHourOffedit', endHourOffedit.value);
   isModalOpen.value = true;
@@ -443,52 +495,42 @@ const closeModal = () => {
 
 const saveChanges = async () => {
   
-  // const onlineDaysFormatted = selectedDaysOnedit.value;
-  // const offlineDaysFormatted = selectedDaysOffedit.value.join("#");
-  // const onlineHourFormatted = startHourOnedit.value + "#" + endHourOnedit.value;
-  // const offlineHourFormatted = startHourOffedit.value + "#" + endHourOffedit.value;
-  // editForm.value.online_day = onlineDaysFormatted;
-  // editForm.value.offline_day = offlineDaysFormatted;
-  // editForm.value.online_hour = onlineHourFormatted;
-  // editForm.value.offline_hour = offlineHourFormatted;
-
-  selectedStartHourOn.value = startHourOnedit.value;
-  selectedEndHourOn.value = endHourOnedit.value;
-  selectedStartHourOff.value = startHourOffedit.value;
-  selectedEndHourOff.value = endHourOffedit.value;
-  editForm.value.online_day = selectedDaysOnedit.value.join(", ");
-  editForm.value.offline_day = selectedDaysOffedit.value.join(", ");
-
-  const onlineHours = generateHourRange(selectedStartHourOn.value, selectedEndHourOn.value);
-  const offlineHours = generateHourRange(selectedStartHourOff.value, selectedEndHourOff.value);
-
-
   
+  const onlineDaysFormatted = selectedDaysOnedit.value.join("#");
+  const offlineDaysFormatted = selectedDaysOffedit.value.join("#");
+  const online_hour = `${startHourOnedit.value}#${endHourOnedit.value}`;
+  const offline_hour = `${startHourOffedit.value}#${endHourOffedit.value}`
+
+  editForm.value.online_day = onlineDaysFormatted;
+  editForm.value.offline_day = offlineDaysFormatted;
+
   const { id, reviews, imgSrc, ...formData } = editForm.value;
-  // formData.online_day = editForm.value.online_day;
-  // formData.offline_day = editForm.value.offline_day;
-  formData.online_hour = onlineHours.join(",");
-  formData.offline_hour = offlineHours.join(",");
+  formData.online_day = onlineDaysFormatted;
+  formData.offline_day = offlineDaysFormatted;
+  formData.online_hour = online_hour;
+  formData.offline_hour = offline_hour;
   formData.description = editForm.value.description;
   formData.specialization = editForm.value.specialization;
   formData.name = editForm.value.name;
 
+
   try {
     const token = localStorage.getItem('token');
-    console.log('editForm', formData);
-    const response = await axios.put(`psikolog/${editForm.value.id}`, formData, {
+    await axios.put(`psikolog/${editForm.value.id}`, formData, {
       headers: {
         Authorization: `Bearer ${token}`, 
       },
     });
-    console.log('Psikolog added:', response.data);
-    closeAddModal();
+
+    closeModal(); // Tutup modal setelah update
+    window.location.reload();
   } catch (e) {
     console.error('Error adding psikolog:', e);
 
     error.value = 'Failed to add psikolog.';
   }
 };
+
 
 const saveNewPsikolog = async () => {
   try {
@@ -517,7 +559,6 @@ onMounted(async () => {
   try {
     await psikologStore.fetchlistPsikologs(); 
     psikologs.value = psikologStore.psikologs;
-    console.dir('psikologs', psikologs.value);
   } catch (err) {
     error.value = 'Failed to load data';
   } finally {
