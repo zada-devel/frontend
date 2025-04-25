@@ -20,28 +20,28 @@
 
         <div class="collapse navbar-collapse" id="navbarNav">
           <ul class="navbar-nav ms-auto mb-2 mb-lg-0">
-            <li class="nav-item" v-if="authStore.isLogged">
+            <li class="nav-item" v-if="authStore.isLogged" v-show="userType !== 'access'">
               <router-link to="/calendar" class="nav-link text-dark fw-medium">
-                Calendar (Admin)
+                Calendar 
               </router-link>
             </li>
-            <li class="nav-item" v-if="authStore.isLogged">
+            <li class="nav-item" v-if="authStore.isLogged" v-show="userType !== 'access'">
               <router-link to="/psikolog-list-admin" class="nav-link text-dark fw-medium">
-                Psikolog (Admin)
+                Psikolog
               </router-link>
             </li>
-            <li class="nav-item" v-if="authStore.isLogged">
+            <li class="nav-item" v-if="authStore.isLogged" v-show="userType !== 'access'">
               <router-link to="/history-admin" class="nav-link text-dark fw-medium">
-                History (Admin)
+                History 
               </router-link>
             </li>
-            <li class="nav-item" v-if="authStore.isLogged">
+            <li class="nav-item" v-if="authStore.isLogged" v-show="userType === 'access'">
               <router-link to="/psikolog-list" class="nav-link text-dark fw-medium">
-                Psikolog (User)
+                Psikolog
               </router-link>
             </li>
-            <li class="nav-item" v-if="authStore.isLogged">
-              <a class="nav-link text-dark fw-medium" href="/history-user">Riwayat (User)</a>
+            <li class="nav-item" v-if="authStore.isLogged" v-show="userType === 'access'">
+              <a class="nav-link text-dark fw-medium" href="/history-user">Riwayat</a>
             </li>
 
             <!-- Tampilkan email jika login -->
@@ -87,12 +87,17 @@ import { ref, computed } from 'vue';
 import { useAuthentication } from '../stores/authetication-store';
 import { useRouter } from 'vue-router';
 
+const userType = ref('');
+
+
 const authStore = useAuthentication();
 const isModalVisible = ref(false);
 const router = useRouter();
 
 // Ambil email dari localStorage
 const userEmail = computed(() => localStorage.getItem('email') || 'User');
+userType.value = localStorage.getItem('userType') || '';
+
 
 // Fungsi untuk menampilkan/menghilangkan modal
 const toggleModal = () => {

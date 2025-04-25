@@ -45,6 +45,7 @@ export const useAuthentication = defineStore('authentication', () => {
 
       localStorage.setItem('token', tokenData);
       localStorage.setItem('email', userEmail);
+    
     } catch (error) {
       console.error('Error during login:', error);
       throw error;
