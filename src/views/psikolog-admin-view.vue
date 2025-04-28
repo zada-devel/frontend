@@ -27,24 +27,38 @@
               <td>{{ psikolog.specialization || 'Tidak ada' }}</td>
               <td>
                 <ul>
-                  <!-- <li v-for="slot in psikolog.availableSlots" :key="slot.date" v-if="slot.online">
-                    <strong>{{ slot.date }}</strong>
-                    <ul>
-                      <li v-for="time in slot.times" :key="time">{{ time }}</li>
-                    </ul>
-                  </li> -->
+                  <li v-for="slot in getOnlineSlots(psikolog)" :key="slot.date">
+                    <p>{{ slot.date }} | {{ slot.times.join(' - ') }}</p>
+                  </li>
                 </ul>
               </td>
               <td>
                 <ul>
-                  <!-- <li v-for="slot in psikolog.availableSlots" :key="slot.date" v-if="slot.offline">
+                  <li v-for="slot in getOfflineSlots(psikolog)" :key="slot.date">
+                    <p>{{ slot.date }} | {{ slot.times.join(' - ') }}</p>
+                  </li>
+                </ul>
+              </td>
+              <!-- <td>
+                <ul>
+                  <li v-for="slot in psikolog.availableSlots" :key="slot.date" v-if="slot.online">
                     <strong>{{ slot.date }}</strong>
                     <ul>
                       <li v-for="time in slot.times" :key="time">{{ time }}</li>
                     </ul>
-                  </li> -->
+                  </li>
                 </ul>
-              </td>
+              </td> -->
+              <!-- <td>
+                <ul>
+                  <li v-for="slot in psikolog.availableSlots" :key="slot.date" v-if="slot.offline">
+                    <strong>{{ slot.date }}</strong>
+                    <ul>
+                      <li v-for="time in slot.times" :key="time">{{ time }}</li>
+                    </ul>
+                  </li>
+                </ul>
+              </td> -->
               <td>
                 <ul>
                   <li v-for="review in psikolog.reviews" :key="review.dateCreated">
@@ -78,20 +92,62 @@
                 </div>
                 <div class="text-start">
                   <label for="online_day">Jadwal Online Hari:</label>
-                  <input v-model="addForm.onlineDay" id="online_day" type="date" class="form-control" />
+                  <!-- <input v-model="addForm.online_day" id="online_day" type="text" class="form-control" /> -->
+                  <div class="checkbox-grid">
+                    <label v-for="day in days" :key="day.value" class="d-block">
+                      <input type="checkbox" v-model="selectedDaysOn" :value="day.value" />
+                      {{ day.label }}
+                    </label>
+                  </div>
                 </div>
                 <div class="text-start">
                   <label for="online_hour">Jadwal Online Jam:</label>
-                  <input v-model="addForm.onlineHour" id="online_hour" type="time" class="form-control" />
+                  <!-- <input v-model="addForm.online_hour" id="online_hour" type="text" class="form-control" /> -->
+                  <div class="d-flex gap-3">
+                  <div class="w-50">
+                    <label for="online_start_hour">Start:</label>
+                    <select v-model="startHourOn" id="online_start_hour" class="form-control">
+                      <option v-for="hour in hours" :key="hour" :value="hour">{{ hour }}</option>
+                    </select>
+                  </div>
+
+                  <div class="w-50">
+                    <label for="online_end_hour">End:</label>
+                    <select v-model="endHourOn" id="online_end_hour" class="form-control">
+                      <option v-for="hour in hours" :key="hour" :value="hour">{{ hour }}</option>
+                    </select>
+                  </div>
+                </div>
                 </div>
 
                 <div class="text-start">
                   <label for="offline_day">Jadwal Offline Hari:</label>
-                  <input v-model="addForm.offlineDay" id="offline_day" type="date" class="form-control" />
+                  <!-- <input v-model="addForm.offline_day" id="offline_day" type="text" class="form-control" /> -->
+                  <div class="checkbox-grid">
+                    <label v-for="day in days" :key="day.value" class="d-block">
+                      <input type="checkbox" v-model="selectedDaysOff" :value="day.value" />
+                      {{ day.label }}
+                    </label>
+                  </div>
                 </div>
                 <div class="text-start">
                   <label for="offline_hour">Jadwal Offline Jam:</label>
-                  <input v-model="addForm.offlineHour" id="offline_hour" type="time" class="form-control" />
+                  <!-- <input v-model="addForm.offline_hour" id="offline_hour" type="text" class="form-control" /> -->
+                  <div class="d-flex gap-3">
+                  <div class="w-50">
+                    <label for="online_start_hour">Start:</label>
+                    <select v-model="startHourOff" id="online_start_hour" class="form-control">
+                      <option v-for="hour in hours" :key="hour" :value="hour">{{ hour }}</option>
+                    </select>
+                  </div>
+
+                  <div class="w-50">
+                    <label for="online_end_hour">End:</label>
+                    <select v-model="endHourOff" id="online_end_hour" class="form-control">
+                      <option v-for="hour in hours" :key="hour" :value="hour">{{ hour }}</option>
+                    </select>
+                  </div>
+                </div>
                 </div>
                 <div class="text-start">
                   <label for="profilepicture">Profile Picture:</label>
@@ -155,17 +211,73 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue';
+import { ref, onMounted, computed } from 'vue';
 import HeaderComponent from '../components/header-component.vue';
 import LandingComponent from '../components/landing-component.vue';
 import axios from 'axios';
 
 // Refs to hold state
+interface DayOption {
+  label: string;
+  value: number;
+}
+
+const hours = ref<string[]>([]);
+for (let i = 0; i < 24; i++) {
+  hours.value.push(i.toString().padStart(2, '0'));
+}
+
+interface OnlineSlot {
+  date: string;  // Tanggal jadwal
+  times: string[];  // Array waktu yang tersedia
+}
+
+interface AvailableSlot {
+  online?: OnlineSlot[];  // Menyimpan jadwal online
+  offline?: OnlineSlot[];  // Menyimpan jadwal offline
+}
+
+interface Psikolog {
+  id: number;
+  name: string;
+  specialization: string;
+  availableSlots: AvailableSlot[];
+  reviews: { dateCreated: string; rating: number }[];
+}
+
+// Daftar hari dengan nilai unik
+const days = ref<DayOption[]>([
+  { label: 'Senin', value: 1 },
+  { label: 'Selasa', value: 2 },
+  { label: 'Rabu', value: 3 },
+  { label: 'Kamis', value: 4 },
+  { label: 'Jumat', value: 5 },
+  { label: 'Sabtu', value: 6 },
+  { label: 'Minggu', value: 7 },
+]);
+
+// Array untuk menyimpan pilihan yang dipilih
+
 const loading = ref(true);
 const error = ref('');
 const psikologs = ref<any[]>([]);
 const isModalOpen = ref(false);
 const isAddModalOpen = ref(false);
+const selectedDaysOn = ref<number[]>([]);
+const selectedDaysOff = ref<number[]>([]);
+const selectedDaysStringOn = computed(() => selectedDaysOn.value.join('#'));
+const selectedDaysStringOff = computed(() => selectedDaysOff.value.join('#'));
+const startHourOn = ref('');
+const endHourOn = ref('');
+const onlineHourOn = computed(() => {
+  return startHourOn.value && endHourOn.value ? `${startHourOn.value}#${endHourOn.value}` : '';
+});
+const startHourOff = ref('');
+const endHourOff = ref('');
+const offlineHourOff = computed(() => {
+  return startHourOff.value && endHourOff.value ? `${startHourOff.value}#${endHourOff.value}` : '';
+});
+
 const editForm = ref({
   name: '',
   specialization: '',
@@ -175,14 +287,42 @@ const addForm = ref({
   description: '',
   experience: '',
   name: '',
-  offlineDay: '',
-  offlineHour: '',
-  onlineDay: '',
-  onlineHour: '',
+  offline_day: selectedDaysStringOff,
+  offline_hour: offlineHourOff,
+  online_day: selectedDaysStringOn,
+  online_hour: onlineHourOn,
   profilepicture: '',
   rating: 0,
   specialization: ''
 });
+
+const getOfflineSlots = (psikolog: Psikolog): { date: string; times: string[] }[] => {
+  const slots = psikolog.availableSlots || [];
+  const offlineSlots = slots.flatMap((slot: AvailableSlot) => {
+    if (slot.offline) {
+      return slot.offline.map((o: OnlineSlot) => ({
+        date: o.date,
+        times: o.times
+      }));
+    }
+    return [];
+  });
+  return offlineSlots;
+};
+
+const getOnlineSlots = (psikolog: Psikolog): { date: string; times: string[] }[] => {
+  const slots = psikolog.availableSlots || [];
+  const onlineSlots = slots.flatMap((slot: AvailableSlot) => {
+    if (slot.online) {
+      return slot.online.map((o: OnlineSlot) => ({
+        date: o.date,
+        times: o.times
+      }));
+    }
+    return [];
+  });
+  return onlineSlots;
+};
 
 // Open the modal for adding a psikolog
 const openAddModal = () => {
@@ -196,6 +336,7 @@ const closeAddModal = () => {
 
 const openEditModal = (psikolog: any) => {
   editForm.value = { ...psikolog };
+  console.log(editForm.value);
   isModalOpen.value = true;
 };
 
@@ -278,5 +419,22 @@ ul li strong {
 /* Modal styling */
 .modal.show {
   display: block;
+}
+
+.checkbox-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr); /* 3 kolom */
+  gap: 8px; /* Jarak antar checkbox */
+}
+
+.checkbox-item {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+div.text-start {
+  margin-bottom: 20px;
+  margin-top: 20px;
 }
 </style>

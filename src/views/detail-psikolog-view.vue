@@ -37,12 +37,12 @@
               <div class="mb-1 text-start">
                 <label for="session-type" class="form-label text-start">Tipe Sesi</label>
                 <select id="session-type" class="form-select" v-model="selectedSession.type">
-                  <option value="Online">Online</option>
+                  <!-- <option value="Online">Online</option> -->
                   <option value="Offline">Offline</option>
                 </select>
               </div>
 
-              <div class="mb-2 text-start">
+              <!-- <div class="mb-2 text-start">
                 <label for="session-date" class="form-label text-start">Tanggal</label>
                 <input 
                   type="date" 
@@ -50,6 +50,14 @@
                   class="form-control" 
                   v-model="selectedSession.date"
                 />
+              </div> -->
+              <div class="mb-2 text-start">
+                <label for="session-date" class="form-label text-start">Tanggal</label>
+                <select id="session-date" class="form-select" v-model="selectedSession.date">
+                  <option v-for="date in availableDates" :key="date" :value="date">
+                    {{ date }}
+                  </option>
+                </select>
               </div>
 
               <div class="mb-2 text-start">
@@ -60,6 +68,7 @@
                   </option>
                 </select>
               </div>
+
 
               <button type="submit" class="btn btn-primary w-100">Pilih Sesi</button>
             </form>
@@ -122,10 +131,15 @@
 </template>
 
 <script lang="ts">
-import { computed, ref } from 'vue';
+import { computed, ref, reactive, onMounted } from 'vue';
 import { usePsikologStore } from '../stores/psikolog-store';
 import LandingComponent from '../components/landing-component.vue';
 import HeaderComponent from '../components/header-component.vue';
+import { useAuthentication } from '../stores/authetication-store';
+// import { useAppointmentStore } from '../stores/appoinment-store';
+import axios from 'axios';
+
+
 
 export default {
   name: 'PsikologDetailView',
@@ -137,19 +151,123 @@ export default {
     const psikologStore = usePsikologStore();
     const psikolog = computed(() => psikologStore.selectedPsikolog); // Mengambil data psikolog dari Pinia store
 
-    const selectedSession = ref({
+    const selectedSession = reactive({
       type: 'Online',
       date: '',
       time: '',
     });
 
-    const availableTimes = ['09.00 WIB', '10.00 WIB', '11.00 WIB', '13.00 WIB'];
+    
+
+    const availableDates = computed(() => {
+      const psikolog = psikologStore.selectedPsikolog;
+      const selectedType = selectedSession.type;
+
+      if (!psikolog) return [];
+
+      let dateSet = new Set<string>();
+
+      if (selectedType === "Online") {
+        psikolog.availableSlots.forEach((slot) => {
+          slot.online?.forEach((o) => dateSet.add(o.date));
+        });
+      } else if (selectedType === "Offline") {
+        psikolog.availableSlots.forEach((slot) => {
+          slot.offline?.forEach((o) => dateSet.add(o.date));
+        });
+      }
+
+      return Array.from(dateSet).sort();
+    });
+
+    const generateTimeRange = (start: string, end: string, interval: number = 60) => {
+      const timeList: string[] = [];
+      let [startHour, startMinute] = start.split(":").map(Number);
+      let [endHour, endMinute] = end.split(":").map(Number);
+
+      while (startHour < endHour || (startHour === endHour && startMinute <= endMinute)) {
+        timeList.push(`${String(startHour).padStart(2, "0")}:${String(startMinute).padStart(2, "0")}`);
+        startMinute += interval;
+        if (startMinute >= 60) {
+          startMinute = 0;
+          startHour += 1;
+        }
+      }
+
+      return timeList;
+    };
+
+    const availableTimes = computed(() => {
+      const psikolog = psikologStore.selectedPsikolog;
+      const selectedType = selectedSession.type;
+      
+
+      if (!psikolog) return [];
+
+      let timeSet = new Set<string>(); // Menggunakan Set untuk menghindari duplikat
+
+        if (selectedType === 'Online') {
+          psikolog.availableSlots.forEach(slot => {
+            if (slot.online) {
+              slot.online.forEach(o => {
+                generateTimeRange(o.times[0], o.times[1]).forEach(time => timeSet.add(time));
+              });
+            }
+          });
+        } else if (selectedType === 'Offline') {
+          psikolog.availableSlots.forEach(slot => {
+            if (slot.offline) {
+              slot.offline.forEach(o => {
+                generateTimeRange(o.times[0], o.times[1]).forEach(time => timeSet.add(time));
+              });
+            }
+          });
+        }
+
+        return Array.from(timeSet).sort(); // Kembalikan dalam bentuk array yang sudah diurutkan
+      });
+
+    // const availableTimes = ['09.00 WIB', '10.00 WIB', '11.00 WIB', '13.00 WIB'];
     const sessionBooked = ref(false);
     const uploadedFile = ref<File | null>(null);
     const paymentMethod = ref('Transfer');
 
+    const form = reactive({
+      accountNumber: '1222211212',
+      date: '',
+      psychologistId: '',
+      time: '',
+      transactionType: 'Transfer',
+      userId: ''
+      });
+
+    const authStore = useAuthentication();
+    const userId = ref<null>();
+
+    const handleid = async () => {
+        try {
+            if (authStore.email) {
+              userId.value = await authStore.getUserByEmail(authStore.email)?? 0;
+              console.log("ini usernya id",userId.value);
+              form.userId = String(userId.value)
+            }
+        } catch (error) {
+          console.error('Registration failed:', error);
+        }
+      };
+
+     
+    onMounted(() => {
+      handleid();
+    });
+
     const bookSession = () => {
-      if (!selectedSession.value.date || !selectedSession.value.time) {
+      form.date = selectedSession.date
+      form.time = selectedSession.time
+      form.psychologistId = psikolog.value?.id ? String(psikolog.value.id) : '';
+      
+      console.log("isi formnya nih", form);
+      if (!selectedSession.date || !selectedSession.time) {
         alert('Harap pilih tanggal dan waktu sesi.');
         return;
       }
@@ -165,19 +283,33 @@ export default {
       }
     };
 
-    const uploadProof = () => {
+    const uploadProof = async () => {
       if (!uploadedFile.value) {
         alert('Harap upload bukti pembayaran.');
         return;
       }
 
       console.log('Bukti pembayaran berhasil diupload:', uploadedFile.value);
+      try {
+        const response = await axios.post('book_appointment', form, {
+          headers: {
+            // 'Content-Type': 'multipart/form-data',
+            // Authorization: `Bearer ${token}`, // Include token in the header
+          },
+        });
+        return response.data;
+        console.log ('ini responnya ya gaesss', response.data);
+      } catch (error) {
+        console.error('Error saat mengirim data:', error);
+        throw new Error('Gagal mengirim data ke server.');
+      }
       alert('Bukti pembayaran berhasil diupload!');
     };
 
     return {
       psikolog,
       selectedSession,
+      availableDates,
       availableTimes,
       sessionBooked,
       uploadedFile,
@@ -187,6 +319,7 @@ export default {
       uploadProof,
     };
   },
+  
 };
 </script>
 

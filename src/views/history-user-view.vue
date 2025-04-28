@@ -25,11 +25,41 @@
 import HeaderComponent from '../components/header-component.vue';
 import LandingComponent from '../components/landing-component.vue';
 import { useTransactionStore } from '../stores/transaction-store';
+import { useAuthentication } from '../stores/authetication-store';
+import { ref, onMounted} from 'vue';
+
+
 
 const transactionStore = useTransactionStore();
 
 
-transactionStore.fetchTransactions();
+console.dir ("ini transaksinya", transactionStore);
+
+const authStore = useAuthentication();
+const userId = ref<null>();
+// const email = localStorage.getItem('email');
+
+const handleid = async () => {
+    try {
+        if (authStore.email) {
+          userId.value = await authStore.getUserByEmail(authStore.email)?? 0;
+          console.log("ini usernya id",userId.value);
+          transactionStore.fetchTransactions(userId.value);
+        }
+    } catch (error) {
+      console.error('Registration failed:', error);
+    }
+  };
+
+ 
+
+ 
+  //   psikologs.value = transactionStore.;
+
+onMounted(() => {
+  handleid();
+});
+// transactionStore.fetchTransactions(userId);
 
 
 // Fungsi untuk format tanggal dan waktu
