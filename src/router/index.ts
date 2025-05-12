@@ -9,6 +9,7 @@ import PsikologAdminView from '../views/psikolog-admin-view.vue'
 import UserProfileView from '../views/user-profile-view.vue'
 import HistoryAdminView from '../views/history-admin-view.vue'
 import CalendarView from '../views/calendar-view.vue'
+import CheckStatusView from '../views/check-status-view.vue'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -62,7 +63,12 @@ const router = createRouter({
       path: '/calendar',
       name: 'calendar',
       component: CalendarView
-    }
+    },
+    {
+      path: '/check-status',
+      name: 'check-status',
+      component: CheckStatusView
+    },
   ]
 })
 

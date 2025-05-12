@@ -22,29 +22,32 @@ interface UserData {
   marriage: string;
 }
 
+interface LoggedInUser {
+  role: string;
+  usr_id: number;
+}
+
 export const useAuthentication = defineStore('authentication', () => {
   const email = ref<string | null>(localStorage.getItem('email'));
   const token = ref<string | null>(localStorage.getItem('token'));
-  const isLogged = ref<boolean>(!!token.value && !!email.value); // Gunakan ref
-  
+  const isLogged = ref<boolean>(!!token.value && !!email.value);
+  const user = ref<LoggedInUser | null>(null);
 
-  // Computed property (jika masih dibutuhkan)
   const isAuthenticated = computed(() => !!token.value);
-  
+
   const getUserByEmail = async (email: string) => {
     try {
-      const response = await axios.post(`get_user_profile`,{
-        email : email
+      const response = await axios.post(`get_user_profile`, {
+        email: email
       });
+      console.log("Respon get_user_profile:", response.data);
       return response.data.user.id;
-      console.log("respon dget data nya ini", response.data); 
     } catch (error) {
       console.error('Error fetching user:', error);
       throw error;
     }
   };
 
-  // Login function
   const login = async (userEmail: string, userPassword: string) => {
     try {
       const response = await axios.post('login', {
@@ -52,28 +55,37 @@ export const useAuthentication = defineStore('authentication', () => {
         password: userPassword,
       });
 
-      const tokenData = response.data.access_token;
-      if (!tokenData) throw new Error('Token is missing in the response');
+      const responseData = response.data;
+      if (!responseData.access_token) throw new Error('Token is missing in the response');
 
-      token.value = tokenData;
+      token.value = responseData.access_token;
       email.value = userEmail;
-      isLogged.value = true; // Set isLogged ke true setelah login
+      isLogged.value = true;
 
-      localStorage.setItem('token', tokenData);
+      user.value = {
+        role: responseData.role,
+        usr_id: responseData.usr_id,
+      };
+
+      localStorage.setItem('token', responseData.access_token);
       localStorage.setItem('email', userEmail);
+      localStorage.setItem('role', responseData.role);
+      localStorage.setItem('usr_id', String(responseData.usr_id));
     } catch (error) {
       console.error('Error during login:', error);
       throw error;
     }
   };
 
-  // Logout function
   const logout = () => {
     token.value = null;
     email.value = null;
-    isLogged.value = false; 
+    user.value = null;
+    isLogged.value = false;
     localStorage.removeItem('token');
     localStorage.removeItem('email');
+    localStorage.removeItem('role');
+    localStorage.removeItem('usr_id');
   };
 
   const register = async (userData: UserData) => {
@@ -86,7 +98,6 @@ export const useAuthentication = defineStore('authentication', () => {
     }
   };
 
-
   return {
     email,
     token,
@@ -95,6 +106,7 @@ export const useAuthentication = defineStore('authentication', () => {
     register,
     login,
     logout,
-    getUserByEmail
+    getUserByEmail,
+    user,
   };
 });

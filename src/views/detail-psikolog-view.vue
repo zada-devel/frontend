@@ -94,33 +94,9 @@
               </div>
             </div>
 
-            <!-- Form Pembayaran -->
             <div v-if="sessionBooked">
-              <h6 class="text-start">Pembayaran</h6>
-              <div class="mb-2 text-start">
-                <label for="payment-method" class="form-label text-start">Metode Pembayaran</label>
-                <select id="payment-method" class="form-select" v-model="paymentMethod">
-                  <option value="Transfer">Transfer</option>
-                </select>
-              </div>
-
-              <div class="mb-2 text-start">
-                <p class="mb-1">Rekening: <strong>BCA: 3890098716</strong></p>
-              </div>
-
-              <!-- Form Upload Bukti Pembayaran -->
-              <h6 class="text-start">Upload Bukti Pembayaran</h6>
               <form @submit.prevent="uploadProof">
-                <div class="mb-2 text-start">
-                  <label for="proof-upload" class="form-label text-start">Upload Gambar</label>
-                  <input 
-                    type="file" 
-                    id="proof-upload" 
-                    class="form-control" 
-                    @change="handleFileUpload"
-                  />
-                </div>
-                <button type="submit" class="btn btn-primary w-100">Upload</button>
+                <button type="submit" class="btn btn-primary w-100">Bayar</button>
               </form>
             </div>
           </div>
@@ -137,8 +113,9 @@ import LandingComponent from '../components/landing-component.vue';
 import HeaderComponent from '../components/header-component.vue';
 import { useAuthentication } from '../stores/authetication-store';
 // import { useAppointmentStore } from '../stores/appoinment-store';
-import axios from 'axios';
+import { useRouter } from 'vue-router';
 
+const router = useRouter();
 
 
 export default {
@@ -229,7 +206,6 @@ export default {
 
     // const availableTimes = ['09.00 WIB', '10.00 WIB', '11.00 WIB', '13.00 WIB'];
     const sessionBooked = ref(false);
-    const uploadedFile = ref<File | null>(null);
     const paymentMethod = ref('Transfer');
 
     const form = reactive({
@@ -240,71 +216,128 @@ export default {
       transactionType: 'Transfer',
       userId: ''
       });
-
-    const authStore = useAuthentication();
-    const userId = ref<null>();
-
-    const handleid = async () => {
-        try {
-            if (authStore.email) {
-              userId.value = await authStore.getUserByEmail(authStore.email)?? 0;
-              console.log("ini usernya id",userId.value);
-              form.userId = String(userId.value)
-            }
-        } catch (error) {
-          console.error('Registration failed:', error);
-        }
-      };
-
+ 
      
     onMounted(() => {
-      handleid();
+      if (psikolog?.value?.id !== undefined) {
+        psikologStore.fetchPsikologsID(psikolog?.value?.id)
+      }
     });
 
-    const bookSession = () => {
-      form.date = selectedSession.date
-      form.time = selectedSession.time
-      form.psychologistId = psikolog.value?.id ? String(psikolog.value.id) : '';
-      
-      console.log("isi formnya nih", form);
-      if (!selectedSession.date || !selectedSession.time) {
-        alert('Harap pilih tanggal dan waktu sesi.');
-        return;
-      }
+  const bookSession = async () => {
+  form.date = selectedSession.date;
+  form.time = selectedSession.time;
+  form.psychologistId = psikolog.value?.id ? String(psikolog.value.id) : '';
+
+  console.log("isi formnya nih", form);
+
+  if (!selectedSession.date || !selectedSession.time) {
+    alert('Harap pilih tanggal dan waktu sesi.');
+    return;
+  }
+
+  // Ambil user dari localStorage
+  const userId = localStorage.getItem('usr_id');
+
+  // Payload untuk request
+  const payload = {
+    accountNumber: "1234567890", // Hardcoded atau nanti bisa dynamic
+    date: form.date,
+    psychologistId: form.psychologistId,
+    time: form.time,
+    transactionType: "transfer",
+    userId: userId || null,
+  };
+
+  try {
+    const response = await fetch('https://bidu.my.id/api/book_appointment', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(payload)
+    });
+
+    const result = await response.json();
+    console.log('Response booking:', result);
+
+    if (response.ok && result.appointment?.id) {
+      localStorage.setItem('appointmentId', result.appointment.id);
 
       sessionBooked.value = true;
-      alert('Sesi berhasil dipesan! Silakan upload bukti pembayaran.');
-    };
+    } else {
+      alert('Gagal memesan sesi. Silakan coba lagi.');
+    }
+  } catch (error) {
+    console.error('Error saat booking:', error);
+    alert('Terjadi kesalahan saat memesan sesi.');
+  }
+};
 
-    const handleFileUpload = (event: Event) => {
-      const target = event.target as HTMLInputElement;
-      if (target.files && target.files[0]) {
-        uploadedFile.value = target.files[0];
+
+
+const uploadProof = async () => {
+  try {
+    // Ambil user info dari localStorage
+    const email = localStorage.getItem('email');
+    const userId = localStorage.getItem('usr_id');
+    // const name = localStorage.getItem('usr_name');
+    const appointmentId = localStorage.getItem('appointmentId');
+
+    // Validasi data
+    if (!email || !userId || !appointmentId) {
+      alert('Data user atau appointment tidak lengkap.');
+      return;
+    }
+
+    // Siapkan payload checkout
+    const payload = {
+      customer: {
+        email: email,
+        id: `CUST-${userId}`,
+        name: name
+      },
+      order: {
+        amount: 100000, // Nominal bisa dibuat dinamis jika perlu
+        invoice_number: `INV-${appointmentId}`
+      },
+      payment: {
+        payment_due_date: 60
       }
     };
 
-    const uploadProof = async () => {
-      if (!uploadedFile.value) {
-        alert('Harap upload bukti pembayaran.');
-        return;
-      }
+    const response = await fetch('https://bidu.my.id/api/checkout', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(payload)
+    });
 
-      console.log('Bukti pembayaran berhasil diupload:', uploadedFile.value);
-      try {
-        const response = await axios.post('book_appointment', form, {
-          headers: {
-            // 'Content-Type': 'multipart/form-data',
-            // Authorization: `Bearer ${token}`, // Include token in the header
-          },
-        });
-        return response.data;
-        console.log ('ini responnya ya gaesss', response.data);
-      } catch (error) {
-        console.error('Error saat mengirim data:', error);
-        throw new Error('Gagal mengirim data ke server.');
-      }
-      alert('Bukti pembayaran berhasil diupload!');
-    };
+    const result = await response.json();
+    console.log('Checkout response:', result);
+
+    // Cek jika berhasil dan ada URL
+    const paymentUrl = result?.data?.response?.payment?.url;
+    const tokenId = result?.data?.response?.payment?.token_id;
+
+    if (response.ok && paymentUrl) {
+      alert('Bukti pembayaran berhasil diupload! Mengarahkan ke halaman pembayaran...');
+      localStorage.setItem('urlPayment' , paymentUrl)
+      localStorage.setItem('tokenId' , tokenId)
+      window.location.href = '/check-status';
+      // window.location.href = paymentUrl;
+    } else {
+      alert('Gagal mendapatkan URL pembayaran.');
+    }
+  } catch (error) {
+    console.error('Error saat mengirim data:', error);
+    alert('Terjadi kesalahan saat mengirim data ke server.');
+  }
+};
+
+
+
 
     return {
       psikolog,
@@ -312,10 +345,8 @@ export default {
       availableDates,
       availableTimes,
       sessionBooked,
-      uploadedFile,
       paymentMethod,
       bookSession,
-      handleFileUpload,
       uploadProof,
     };
   },

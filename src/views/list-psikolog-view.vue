@@ -30,7 +30,7 @@ import LandingComponent from '../components/landing-component.vue';
       )
       psikologStore.setSelectedPsikolog(psikolog);
       router.push({
-        name: 'PsikologDetail',
+        name: 'detail-psikolog',
         params: { id: psikolog.id },
       });
     };

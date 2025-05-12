@@ -51,7 +51,6 @@ const handleLogin = async () => {
 
     // Pastikan token ada sebelum navigasi
     if (auth.token) {
-      console.log('Pindah ke:', { name: 'dashboard' });
       router.replace({ name: 'dashboard' });
     } else {
       console.error('Token tidak ditemukan setelah login.');

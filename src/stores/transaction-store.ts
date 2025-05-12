@@ -19,7 +19,9 @@ export const useTransactionStore = defineStore('transactionStore', {
   }),
   actions: {
     // 
-    async fetchTransactions(id = null) {
+    async fetchTransactions() {
+      const id = localStorage.getItem('usr_id')
+
       try {
         const token = localStorage.getItem('token');
         if (!token) {

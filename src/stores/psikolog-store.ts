@@ -90,7 +90,7 @@ export const usePsikologStore = defineStore('psikologStore', {
       this.loading = true;
       this.error = '';
       try {
-        const response = await axios.get(`get_psikolog_list_with_profile/${id}`, {
+        const response = await axios.get(`https://bidu.my.id/api/get_psikolog_list_with_profile?psikologId=${id}`, {
           headers: { Authorization: `Bearer ${localStorage.getItem('token')}` },
         });
     

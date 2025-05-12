@@ -30,6 +30,8 @@ export const useAppointmentStore = defineStore('appointment', {
       this.uploadedFile = file;
     },
 
+    
+
     // Submit payment data
     async submitPayment() {
       if (!this.uploadedFile) {
@@ -66,5 +68,6 @@ export const useAppointmentStore = defineStore('appointment', {
         throw new Error('Gagal mengirim data ke server.');
       }
     },
+    
   },
 });

@@ -282,18 +282,6 @@ import Column from 'primevue/column';
 import 'vue3-easy-data-table/dist/style.css';
 
 
-const headers = [
-  { text: "Nama Psikolog", value: "name" },
-  { text: "Spesialisasi", value: "specialization" },
-  { text: "Jadwal Online", value: "onlineSchedule" },
-  { text: "Jadwal Jam Online", value: "onlineHour" },
-  { text: "Jadwal Offline", value: "offlineSchedule" },
-  { text: "Jadwal Jam Offline", value: "offlineHour" },
-  { text: "aksi", value: "actions" }
-];
-
-
-
 // Refs to hold state
 interface DayOption {
   label: string;

@@ -20,27 +20,27 @@
 
         <div class="collapse navbar-collapse" id="navbarNav">
           <ul class="navbar-nav ms-auto mb-2 mb-lg-0">
-            <li class="nav-item" v-if="authStore.isLogged" v-show="userType !== 'access'">
+            <li class="nav-item" v-if="authStore.isLogged" v-show="userRole !== 'user'" >
               <router-link to="/calendar" class="nav-link text-dark fw-medium">
-                Calendar 
+                Calendar
               </router-link>
             </li>
-            <li class="nav-item" v-if="authStore.isLogged" v-show="userType !== 'access'">
+            <li class="nav-item" v-if="authStore.isLogged" v-show="userRole !== 'user'">
               <router-link to="/psikolog-list-admin" class="nav-link text-dark fw-medium">
                 Psikolog
               </router-link>
             </li>
-            <li class="nav-item" v-if="authStore.isLogged" v-show="userType !== 'access'">
+            <li class="nav-item" v-if="authStore.isLogged"  v-show="userRole !== 'user'">
               <router-link to="/history-admin" class="nav-link text-dark fw-medium">
-                History 
+                Riwayat
               </router-link>
             </li>
-            <li class="nav-item" v-if="authStore.isLogged" v-show="userType === 'access'">
+            <li class="nav-item" v-if="authStore.isLogged" v-show="userRole === 'user'">
               <router-link to="/psikolog-list" class="nav-link text-dark fw-medium">
                 Psikolog
               </router-link>
             </li>
-            <li class="nav-item" v-if="authStore.isLogged" v-show="userType === 'access'">
+            <li class="nav-item" v-if="authStore.isLogged" v-show="userRole === 'user'">
               <a class="nav-link text-dark fw-medium" href="/history-user">Riwayat</a>
             </li>
 
@@ -87,7 +87,7 @@ import { ref, computed } from 'vue';
 import { useAuthentication } from '../stores/authetication-store';
 import { useRouter } from 'vue-router';
 
-const userType = ref('');
+const userRole = ref('');
 
 
 const authStore = useAuthentication();
@@ -96,7 +96,7 @@ const router = useRouter();
 
 // Ambil email dari localStorage
 const userEmail = computed(() => localStorage.getItem('email') || 'User');
-userType.value = localStorage.getItem('userType') || '';
+userRole.value = localStorage.getItem('role') || '';
 
 
 // Fungsi untuk menampilkan/menghilangkan modal
