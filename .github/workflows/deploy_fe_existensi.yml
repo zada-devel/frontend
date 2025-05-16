@@ -36,5 +36,6 @@ jobs:
         run: |
           lftp -c "
             open -u $FTP_USERNAME,$FTP_PASSWORD $FTP_HOST
+            set ssl:verify-certificate no
             mirror -R --delete --verbose dist $FTP_REMOTE_PATH
           "
