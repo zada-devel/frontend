@@ -1,0 +1,40 @@
+name: Build and Deploy Vue.js via FTP
+
+on:
+  push:
+    branches:
+      - main  # Change to your branch if needed
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '16'  # Adjust Node.js version as needed
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Build Vue.js project
+        run: npm run build
+
+      - name: Install lftp
+        run: sudo apt-get update && sudo apt-get install -y lftp
+
+      - name: Deploy dist folder via FTP
+        env:
+          FTP_HOST: ${{ secrets.FTP_HOST }}
+          FTP_USERNAME: ${{ secrets.FTP_USERNAME }}
+          FTP_PASSWORD: ${{ secrets.FTP_PASSWORD }}
+          FTP_REMOTE_PATH: ${{ secrets.FTP_REMOTE_PATH }}
+        run: |
+          lftp -c "
+            open -u $FTP_USERNAME,$FTP_PASSWORD $FTP_HOST
+            mirror -R --delete --verbose dist $FTP_REMOTE_PATH
+          "
