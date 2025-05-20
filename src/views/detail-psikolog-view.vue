@@ -86,7 +86,7 @@
                   </div>
                   <div class="col-4 text-end">
                     <p class="mb-1">
-                      <strong>Total: 300.000</strong><br />
+                      <strong>{{ psikolog.price }}</strong><br />
                       {{ new Date().toLocaleDateString('id-ID') }} | {{ new Date().toLocaleTimeString('id-ID') }}
                     </p>
                   </div>
@@ -111,11 +111,8 @@ import { computed, ref, reactive, onMounted } from 'vue';
 import { usePsikologStore } from '../stores/psikolog-store';
 import LandingComponent from '../components/landing-component.vue';
 import HeaderComponent from '../components/header-component.vue';
-import { useAuthentication } from '../stores/authetication-store';
-// import { useAppointmentStore } from '../stores/appoinment-store';
-import { useRouter } from 'vue-router';
+import axios from 'axios';
 
-const router = useRouter();
 
 
 export default {
@@ -238,6 +235,7 @@ export default {
 
   // Ambil user dari localStorage
   const userId = localStorage.getItem('usr_id');
+  
 
   // Payload untuk request
   const payload = {
@@ -249,39 +247,51 @@ export default {
     userId: userId || null,
   };
 
-  try {
-    const response = await fetch('https://bidu.my.id/api/book_appointment', {
-      method: 'POST',
+  const token = localStorage.getItem('token'); // Pastikan token ada di localStorage
+
+try {
+  const response = await axios.post(
+    'https://bidu.my.id/dev_api/book_appointment',
+    {
+      accountNumber: "1234567890", // Bisa diganti jadi dynamic
+      date: form.date,
+      psychologistId: form.psychologistId,
+      time: form.time,
+      transactionType: "transfer",
+      userId: userId || null,
+    },
+    {
       headers: {
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify(payload)
-    });
-
-    const result = await response.json();
-    console.log('Response booking:', result);
-
-    if (response.ok && result.appointment?.id) {
-      localStorage.setItem('appointmentId', result.appointment.id);
-
-      sessionBooked.value = true;
-    } else {
-      alert('Gagal memesan sesi. Silakan coba lagi.');
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      }
     }
-  } catch (error) {
-    console.error('Error saat booking:', error);
-    alert('Terjadi kesalahan saat memesan sesi.');
+  );
+
+  const result = response.data;
+  console.log('Response booking:', result);
+
+  if (result.appointment?.id) {
+    localStorage.setItem('appointmentId', result.appointment.id);
+    sessionBooked.value = true;
+  } else {
+    alert('Gagal memesan sesi. Silakan coba lagi.');
   }
+} catch (error) {
+  console.error('Error saat booking:', error);
+  alert('Terjadi kesalahan saat memesan sesi.');
+}
+
 };
 
-
+const token = localStorage.getItem('token'); 
 
 const uploadProof = async () => {
   try {
     // Ambil user info dari localStorage
     const email = localStorage.getItem('email');
     const userId = localStorage.getItem('usr_id');
-    // const name = localStorage.getItem('usr_name');
+    const name = localStorage.getItem('usr_name'); // Jangan lupa ambil nama kalau dipakai
     const appointmentId = localStorage.getItem('appointmentId');
 
     // Validasi data
@@ -295,37 +305,40 @@ const uploadProof = async () => {
       customer: {
         email: email,
         id: `CUST-${userId}`,
-        name: name
+        name: name || 'User', // Default kalau name kosong
       },
       order: {
-        amount: 100000, // Nominal bisa dibuat dinamis jika perlu
-        invoice_number: `INV-${appointmentId}`
+        amount: psikolog.value?.price || 0, // Pastikan ada harga default
+        invoice_number: `INV-${appointmentId}`,
       },
       payment: {
-        payment_due_date: 60
-      }
+        payment_due_date: 60,
+      },
     };
 
-    const response = await fetch('https://bidu.my.id/api/checkout', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify(payload)
-    });
-
-    const result = await response.json();
+    const response = await axios.post(
+  'https://bidu.my.id/dev_api/checkout',
+  payload,
+  {
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${token}`,  // <-- tambahkan ini
+    },
+  }
+);
+    const result = response.data;
     console.log('Checkout response:', result);
 
     // Cek jika berhasil dan ada URL
     const paymentUrl = result?.data?.response?.payment?.url;
     const tokenId = result?.data?.response?.payment?.token_id;
 
-    if (response.ok && paymentUrl) {
+    if (paymentUrl) {
       alert('Bukti pembayaran berhasil diupload! Mengarahkan ke halaman pembayaran...');
-      localStorage.setItem('urlPayment' , paymentUrl)
-      localStorage.setItem('tokenId' , tokenId)
+      localStorage.setItem('urlPayment', paymentUrl);
+      localStorage.setItem('tokenId', tokenId);
       window.location.href = '/check-status';
+      // Atau kalau mau langsung ke paymentUrl:
       // window.location.href = paymentUrl;
     } else {
       alert('Gagal mendapatkan URL pembayaran.');
@@ -335,10 +348,6 @@ const uploadProof = async () => {
     alert('Terjadi kesalahan saat mengirim data ke server.');
   }
 };
-
-
-
-
     return {
       psikolog,
       selectedSession,

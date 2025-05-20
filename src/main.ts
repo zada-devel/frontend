@@ -8,7 +8,7 @@ import 'bootstrap/dist/css/bootstrap.min.css'
 import 'bootstrap/dist/js/bootstrap.bundle.min.js'
 import { createPinia } from 'pinia'
 
-axios.defaults.baseURL = 'https://bidu.my.id/api/'
+axios.defaults.baseURL = 'https://bidu.my.id/dev_api/'
 
 const app = createApp(App)
 

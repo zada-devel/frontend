@@ -16,6 +16,7 @@ interface Psikolog {
   }[];
   reviews: [];
   imgSrc: string;
+  price: number
 }
 
 export const usePsikologStore = defineStore('psikologStore', {
@@ -47,6 +48,7 @@ export const usePsikologStore = defineStore('psikologStore', {
             reviews: psychologist.reviews || [],
             imgSrc: psychologist.imgSrc || '',
             description: psychologist.description || '',
+            price: psikologList.price
           }));
           this.psikologs = psikologList;
         } else {
@@ -65,7 +67,7 @@ export const usePsikologStore = defineStore('psikologStore', {
         const response = await axios.get('get_psikolog_list_with_profile', {
           headers: { Authorization: `Bearer ${localStorage.getItem('token')}` },
         });
-
+        console.log("Responsee " + JSON.stringify(response))
         if (response.data.status === 'success') {
           const psikologList = response.data.psikologs.psychologists.map((psychologist: any) => ({
             id: psychologist.id,
@@ -75,6 +77,7 @@ export const usePsikologStore = defineStore('psikologStore', {
             reviews: psychologist.reviews || [],
             imgSrc: psychologist.imgSrc || '',
             description: psychologist.description || '',
+            price: psychologist.price
           }));
           this.psikologs = psikologList;
         } else {
@@ -103,7 +106,8 @@ export const usePsikologStore = defineStore('psikologStore', {
               specialization: psychologist.specialization || '-',
               availableSlots: psychologist.availableSlots,
               reviews: psychologist.reviews || [],
-              imgSrc: psychologist.imgSrc || '', // Tambahkan imgSrc jika diperlukan
+              imgSrc: psychologist.imgSrc || '', 
+              price: psychologist.price
             },
           ];
         } else {
@@ -126,6 +130,7 @@ export const usePsikologStore = defineStore('psikologStore', {
       profilepicture: string;
       rating: number;
       specialization: string;
+      price: number
     }) {
       this.loading = true;
       this.error = '';
@@ -142,6 +147,7 @@ export const usePsikologStore = defineStore('psikologStore', {
             availableSlots: [], // Default value
             reviews: [],        // Default value
             imgSrc: psikolog.profilepicture || '', // Default value
+            price: psikolog.price
           });
         } else {
           this.error = 'Gagal menyimpan data psikolog.';

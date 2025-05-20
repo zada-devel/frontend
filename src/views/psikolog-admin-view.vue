@@ -151,12 +151,16 @@
                 </div>
                 <div class="text-start">
                   <label for="profilepicture">Profile Picture:</label>
-                  <input id="profilepicture" type="file" class="form-control" accept="image/*" />
+                  <input id="profilepicture" type="file" class="form-control" accept="image/*" @change="handleFileChange" />
                 </div>
 
                 <div class="text-start">
                   <label for="experience">Pengalaman:</label>
                   <input v-model="addForm.experience" id="experience" type="text" class="form-control" />
+                </div>
+                <div class="text-start">
+                  <label for="rating">Price:</label>
+                  <input v-model="addForm.price" id="price" type="number" min="0" max="5" class="form-control" />
                 </div>
                 <div class="text-start">
                   <label for="rating">Rating:</label>
@@ -293,7 +297,8 @@ const addForm = ref({
   online_hour: onlineHourOn,
   profilepicture: '',
   rating: 0,
-  specialization: ''
+  specialization: '',
+  price: 0
 });
 
 const getOfflineSlots = (psikolog: Psikolog): { date: string; times: string[] }[] => {
@@ -308,6 +313,14 @@ const getOfflineSlots = (psikolog: Psikolog): { date: string; times: string[] }[
     return [];
   });
   return offlineSlots;
+};
+const selectedFile = ref<File | null>(null);
+
+const handleFileChange = (event: Event) => {
+  const target = event.target as HTMLInputElement;
+  if (target.files && target.files.length > 0) {
+    selectedFile.value = target.files[0];
+  }
 };
 
 const getOnlineSlots = (psikolog: Psikolog): { date: string; times: string[] }[] => {
@@ -351,9 +364,24 @@ const saveChanges = () => {
 const saveNewPsikolog = async () => {
   try {
     const token = localStorage.getItem('token');
-    const response = await axios.post('psikolog', addForm.value, {
+    const formData = new FormData();
+
+    // Append semua field dari addForm kecuali profilepicture
+    Object.entries(addForm.value).forEach(([key, value]) => {
+      if (key !== 'profilepicture') {
+        formData.append(key, String(value));
+      }
+    });
+
+    // Append file profilepicture yang berupa Blob/File
+    if (selectedFile.value) {
+      formData.append('profilepicture', selectedFile.value);
+    }
+
+    const response = await axios.post('psikolog', formData, {
       headers: {
-        Authorization: `Bearer ${token}`, 
+        Authorization: `Bearer ${token}`,
+        'Content-Type': 'multipart/form-data',
       },
     });
 
@@ -365,6 +393,7 @@ const saveNewPsikolog = async () => {
     error.value = 'Failed to add psikolog.';
   }
 };
+
 
 
 import { usePsikologStore } from "../stores/psikolog-store";
