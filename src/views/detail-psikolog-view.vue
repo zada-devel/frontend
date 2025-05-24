@@ -236,17 +236,6 @@ export default {
   // Ambil user dari localStorage
   const userId = localStorage.getItem('usr_id');
   
-
-  // Payload untuk request
-  const payload = {
-    accountNumber: "1234567890", // Hardcoded atau nanti bisa dynamic
-    date: form.date,
-    psychologistId: form.psychologistId,
-    time: form.time,
-    transactionType: "transfer",
-    userId: userId || null,
-  };
-
   const token = localStorage.getItem('token'); // Pastikan token ada di localStorage
 
 try {

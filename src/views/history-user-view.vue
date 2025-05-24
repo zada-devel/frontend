@@ -29,7 +29,7 @@ import HeaderComponent from '../components/header-component.vue';
 import LandingComponent from '../components/landing-component.vue';
 import { useTransactionStore } from '../stores/transaction-store';
 import { useAuthentication } from '../stores/authetication-store';
-import { ref, onMounted } from 'vue';
+import { onMounted } from 'vue';
 
 const transactionStore = useTransactionStore();
 const authStore = useAuthentication();
@@ -53,10 +53,6 @@ function formatDateTime(date: string, time: string): string {
   return `${new Date(date).toLocaleDateString('id-ID')} | ${time}`;
 }
 
-// Jadwalkan ulang
-function reschedule(id: string) {
-  console.log(`Jadwalkan ulang transaksi dengan ID: ${id}`);
-}
 
 // CSS class untuk status
 function statusClass(status: string) {
